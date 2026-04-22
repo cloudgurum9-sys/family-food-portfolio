@@ -16,7 +16,7 @@ st.sidebar.title("🚀 구민준의 포트폴리오")
 menu = st.sidebar.radio(
     "프로젝트를 선택하세요:",
     ["[Project 1] 미니 ERP 시스템", 
-     "[Project 2] 미수금(AR) 대사 대시보드", 
+     "[Project 2] 미수금 대사 대시보드", 
      "[Project 3] 재고(Inventory) 대사 자동화"]
 )
 
@@ -101,8 +101,8 @@ if menu == "[Project 1] 미니 ERP 시스템":
 # ---------------------------------------------------------
 # [Project 2] 미수금(AR) 대사 대시보드
 # ---------------------------------------------------------
-elif menu == "[Project 2] 미수금(AR) 대사 대시보드":
-    st.title("💸 B2B 거래처 미수금(AR) 자동 대사")
+elif menu == "[Project 2] 미수금 대사 대시보드":
+    st.title("💸 B2B 거래처 미수금 자동 대사")
     st.markdown("ERP 청구액과 은행 실입금액을 **자동 매칭**하여 미수 잔액을 추적합니다.")
 
     inv_data = {
