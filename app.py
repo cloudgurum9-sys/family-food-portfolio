@@ -12,7 +12,6 @@ if 'erp_data' not in st.session_state:
 
 # 3. 사이드바 메뉴 구성
 st.sidebar.title("🚀 구민준의 포트폴리오")
-st.sidebar.info("회계 기본기와 Python 역량을 결합한 하이브리드 재무 인재")
 
 menu = st.sidebar.radio(
     "프로젝트를 선택하세요:",
@@ -22,7 +21,7 @@ menu = st.sidebar.radio(
 )
 
 st.sidebar.divider()
-st.sidebar.caption("Contact: minjoon@email.com")
+st.sidebar.caption("Contact: alswns0712@naver.com")
 
 # ---------------------------------------------------------
 # [Project 1] 미니 ERP 시스템
@@ -34,13 +33,28 @@ if menu == "[Project 1] 미니 ERP 시스템":
     tabs = st.tabs(["📝 전표 입력", "📊 통합 분개장"])
     
     with tabs[0]:
-        col1, col2 = st.columns(2)
-        with col1:
+        col_type, col_date = st.columns(2)
+        with col_type:
             trans_type = st.selectbox("거래 유형", ["매입 (원재료 구매)", "매출 (제품 납품)"])
-            client = st.selectbox("거래처", ["CJ제일제당", "삼양사", "해태제과", "이마트(PB)"])
-        with col2:
+        with col_date:
             date = st.date_input("거래 일자", datetime.now())
+
+        col_client, col_item = st.columns(2)
+        with col_client:
+            if "매입" in trans_type:
+                client = st.selectbox("거래처(매입처)", ["CJ제일제당", "삼양사", "해태제과", "이마트(PB)"])
+            else:
+                client = st.selectbox("거래처(매출처)", ["해태제과", "크라운제과", "이마트(PB)"])
+        with col_item:
+            if "매입" in trans_type:
+                item = st.selectbox("품목(원자재)", ["강력밀가루", "정제설탕", "가공유지"])
+            else:
+                item = st.selectbox("품목(제품)", ["홈런볼(납품용)", "에이스(납품용)", "오예스(수출용)"])
+
+        col_qty, col_price = st.columns(2)
+        with col_qty:
             qty = st.number_input("수량(EA/Kg)", min_value=1, value=100)
+        with col_price:
             price = st.number_input("단가(공급가액)", min_value=0, value=10000, step=1000)
 
         supply_value = qty * price
@@ -60,7 +74,7 @@ if menu == "[Project 1] 미니 ERP 시스템":
                 debit, credit = "매출채권(외상매출금)", "매출액 / 부가세예수금"
             
             st.session_state['erp_data'].append({
-                "일자": date, "구분": trans_type, "거래처": client,
+                "일자": date, "구분": trans_type, "거래처": client, "품목": item,
                 "공급가액": supply_value, "부가세": vat, "합계": total_amount,
                 "차변계정": debit, "대변계정": credit
             })
@@ -69,6 +83,8 @@ if menu == "[Project 1] 미니 ERP 시스템":
     with tabs[1]:
         if st.session_state['erp_data']:
             df = pd.DataFrame(st.session_state['erp_data'])
+            cols = ['일자', '구분', '거래처', '품목', '공급가액', '부가세', '합계', '차변계정', '대변계정']
+            df = df[cols]
             st.dataframe(df.style.format({'공급가액': '{:,.0f}', '부가세': '{:,.0f}', '합계': '{:,.0f}'}), width='stretch')
         else:
             st.info("입력된 데이터가 없습니다.")
@@ -91,9 +107,12 @@ elif menu == "[Project 2] 미수금(AR) 대사 대시보드":
     })
 
     # 대사 로직
-    res_df = pd.merge(inv_df.groupby('거래처명').sum().reset_index(), 
-                      bank_df.groupby('입금자명').sum().reset_index(), 
+    res_df = pd.merge(inv_df.groupby('거래처명')['청구금액'].sum().reset_index(), 
+                      bank_df.groupby('입금자명')['실제입금액'].sum().reset_index(), 
                       left_on='거래처명', right_on='입금자명', how='outer').fillna(0)
+    
+    # 💡 거래처명 NaN 처리 (Outer Join 시 발생하는 빈 값 방지)
+    res_df['거래처명'] = res_df['거래처명'].fillna(res_df['입금자명'])
     res_df['미수잔액'] = res_df['청구금액'] - res_df['실제입금액']
 
     st.subheader("🚨 실시간 미수 잔액 현황")
@@ -103,11 +122,14 @@ elif menu == "[Project 2] 미수금(AR) 대사 대시보드":
 
     # 시각화
     chart_data = res_df[res_df['미수잔액'] > 0]
-    chart = alt.Chart(chart_data).mark_bar(color="#ff4b4b", size=60).encode(
-        x=alt.X('거래처명', axis=alt.Axis(labelAngle=0)),
-        y='미수잔액'
-    ).properties(height=300)
-    st.altair_chart(chart, use_container_width=True)
+    if not chart_data.empty:
+        chart = alt.Chart(chart_data).mark_bar(color="#ff4b4b", size=60).encode(
+            x=alt.X('거래처명', axis=alt.Axis(labelAngle=0)),
+            y='미수잔액'
+        ).properties(height=300)
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.success("🎉 현재 모든 거래처의 미수금이 0원입니다!")
 
 # ---------------------------------------------------------
 # [Project 3] 재고(Inventory) 대사 자동화
