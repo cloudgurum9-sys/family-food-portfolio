@@ -116,7 +116,8 @@ elif menu == "[Project 2] 미수금(AR) 대사 대시보드":
     res_df['미수잔액'] = res_df['청구금액'] - res_df['실제입금액']
 
     st.subheader("🚨 실시간 미수 잔액 현황")
-    st.dataframe(res_df[['거래처명', '청구금액', '실제입금액', '미수잔액']].style.applymap(
+    # 💡 applymap을 map으로 수정했습니다!
+    st.dataframe(res_df[['거래처명', '청구금액', '실제입금액', '미수잔액']].style.map(
         lambda x: 'background-color: #ffcccc' if x > 0 else '', subset=['미수잔액']
     ).format('{:,.0f}', subset=['청구금액', '실제입금액', '미수잔액']), width='stretch')
 
